@@ -14,10 +14,7 @@
 
 package trail
 
-import (
-	"fmt"
-	"unicode"
-)
+import "fmt"
 
 // RFID15 is a 15 decimal implant number based on ISO 11784 & 11785.
 type RFID15 uint64
@@ -59,33 +56,40 @@ func (id RFID15) ID() string {
 // UELN (Universal Equine Life Number) is a horse-specific identification number
 // that can be used to identify each horse individual.
 // See http://www.ueln.net/ueln-presentation/rules-of-attribution-of-the-ueln/
-type UELN string
+type UELN [15]byte
 
-// ParseUELN returns the parsed value if, and only if, s is syntactically correct.
-func ParseUELN(s string) UELN {
-	if len(s) < 15 {
-		return ""
+// ParseUELN parses and normalizes [uppercasing] s into n.
+// The return is OK if, and only if, s is syntactically correct.
+func ParseUELN(s string) (n UELN, ok bool) {
+	if len(s) != len(n) {
+		return
 	}
 
-	for i := 0; i < 6; i++ {
-		if c := s[i]; c < '0' || c > '9' {
-			return ""
+	for i := range n {
+		c := s[i]
+
+		switch {
+		case c <= '9' && c >= '0':
+			break
+		case i > 5 && c <= 'Z' && c >= 'A':
+			// letters allowed in national ID
+			break
+		case i > 5 && c <= 'z' && c >= 'a':
+			// convert to uppercase
+			c = c - ('a' - 'A')
+		default:
+			return UELN{}, false
 		}
+		n[i] = c
 	}
 
-	var n int
-	for _, r := range s[6:] {
-		n++
-		if !unicode.IsDigit(r) && !unicode.IsLetter(r) {
-			return ""
-		}
-		// BUG(pascaldekloe): Are UELNs case sensitive?
-	}
-	if n != 9 {
-		return ""
-	}
+	ok = true
+	return
+}
 
-	return UELN(s)
+// String returns the 15 character code.
+func (n UELN) String() string {
+	return string(n[:])
 }
 
 // Country returns the 3 decimal ISO-3166 country code

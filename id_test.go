@@ -60,6 +60,7 @@ var goldenUELNs = []struct {
 	{"", false, "", "", ""},
 	{"372414001234567", true, "372", "414", "001234567"},
 	{"25000100155928M", true, "250", "001", "00155928M"},
+	{"25000100155928m", true, "250", "001", "00155928M"},
 	{"12a456012345678", false, "", "", ""},
 	{"12345a012345678", false, "", "", ""},
 	{"123456-12345678", false, "", "", ""},
@@ -68,17 +69,20 @@ var goldenUELNs = []struct {
 
 func TestGoldenUELNs(t *testing.T) {
 	for _, gold := range goldenUELNs {
-		got := ParseUELN(gold.Feed)
-		if (gold.OK && got == "") || (!gold.OK && got != "") {
-			t.Errorf("%s: parsed to %q, want success=%t", gold.Feed, got, gold.OK)
+		got, ok := ParseUELN(gold.Feed)
+		if ok != gold.OK {
+			t.Errorf("%s: parse OK %t, want %t", gold.Feed, ok, gold.OK)
+			continue
 		}
-		if got == "" {
+		if !gold.OK {
+			var want UELN
+			if got != want {
+				t.Errorf("%s: parse got %#x, want %#x", gold.Feed, got, want)
+			}
+
 			continue
 		}
 
-		if s := string(got); s != gold.Feed {
-			t.Errorf("%s: got string %q", gold.Feed, s)
-		}
 		if s := got.Country(); s != gold.Country {
 			t.Errorf("%s: got country %q, want %q", gold.Feed, s, gold.Country)
 		}
@@ -87,6 +91,11 @@ func TestGoldenUELNs(t *testing.T) {
 		}
 		if s := got.NationalID(); s != gold.NationalID {
 			t.Errorf("%s: got national ID %q, want %q", gold.Feed, s, gold.NationalID)
+		}
+
+		want := gold.Country + gold.Database + gold.NationalID
+		if s := got.String(); s != want {
+			t.Errorf("%s: got string %q, want %q", gold.Feed, s, want)
 		}
 	}
 }
