@@ -14,9 +14,13 @@
 
 package trail
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 // RFID15 is a 15 decimal implant number based on ISO 11784 & 11785.
+// The data is packed in the 48 least significant bits.
 type RFID15 uint64
 
 // ParseRFID15 returns the parsed value if, and only if, s is syntactically correct.
@@ -25,32 +29,32 @@ func ParseRFID15(s string) RFID15 {
 		return 0
 	}
 
-	var n uint64
-	for i := 0; i < 15; i++ {
-		d := uint64(s[i]) - '0'
-		if d > 9 {
-			return 0
-		}
-		n = n*10 + d
+	country, err := strconv.ParseUint(s[:3], 10, 10)
+	if err != nil {
+		return 0
+	}
+	id, err := strconv.ParseUint(s[3:], 10, 38)
+	if err != nil {
+		return 0
 	}
 
-	return RFID15(n)
+	return RFID15(country<<38 | id)
 }
 
 // String returns the 15 decimal code.
 func (id RFID15) String() string {
-	return fmt.Sprintf("%015d", id)
+	return fmt.Sprintf("%03d%012d", id>>38, id&(1<<38-1))
 }
 
 // Manufacturer returns the 3 decimal code from the 10-bit country code field.
 // See https://www.service-icar.com/tables/Tabella3.php
 func (id RFID15) Manufacturer() string {
-	return fmt.Sprintf("%03d", id/1E12)
+	return id.String()[:3]
 }
 
 // ID returns the 12 decimal code from the 38-bit ID field.
 func (id RFID15) ID() string {
-	return fmt.Sprintf("%012d", id%1E12)
+	return id.String()[3:]
 }
 
 // UELN (Universal Equine Life Number) is a horse-specific identification number

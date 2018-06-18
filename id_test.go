@@ -18,35 +18,32 @@ import "testing"
 
 var goldenRFID15s = []struct {
 	Feed string
-	Want RFID15
 	// parts
 	Manufacturer, ID string
 }{
-	{"", 0, "", ""},
-	{"012345678987654", 12345678987654, "012", "345678987654"},
-	{"321098765432100", 321098765432100, "321", "098765432100"},
-	{"1234567890-1234", 0, "", ""},
-	{"1234567890X1234", 0, "", ""},
+	{"", "000", "000000000000"},
+	{"4321", "000", "000000000000"},
+	{"1111111111111111", "000", "000000000000"},
+	{"024012345678901", "024", "012345678901"},
+	{"248123456789876", "248", "123456789876"},
+	{"2481234567-9876", "000", "000000000000"},
+	{"2481234567a9876", "000", "000000000000"},
 }
 
 func TestGoldenRFID15s(t *testing.T) {
 	for _, gold := range goldenRFID15s {
 		got := ParseRFID15(gold.Feed)
-		if got != gold.Want {
-			t.Errorf("%s: parsed to %d, want %d", gold.Feed, got, gold.Want)
-		}
-		if got == 0 {
-			continue
-		}
 
-		if s := got.String(); s != gold.Feed {
-			t.Errorf("%s: got string %q", gold.Feed, s)
-		}
 		if s := got.Manufacturer(); s != gold.Manufacturer {
-			t.Errorf("%s: got manufacturer %q, want %q", gold.Feed, s, gold.Manufacturer)
+			t.Errorf("%q got manufacturer %q, want %q", gold.Feed, s, gold.Manufacturer)
 		}
 		if s := got.ID(); s != gold.ID {
-			t.Errorf("%s: got ID %q, want %q", gold.Feed, s, gold.ID)
+			t.Errorf("%q got ID %q, want %q", gold.Feed, s, gold.ID)
+		}
+
+		want := gold.Manufacturer + gold.ID
+		if s := got.String(); s != want {
+			t.Errorf("%q got string %q", gold.Feed, want)
 		}
 	}
 }

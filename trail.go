@@ -20,7 +20,8 @@ import (
 	"strconv"
 )
 
-// Date specifies a Gregorian calendar day (with 23 bits).
+// Date specifies a Gregorian calendar day.
+// The data is packed in the 23 least significant bits.
 type Date uint
 
 // Split returns the corresponding year, month and day of the month.
