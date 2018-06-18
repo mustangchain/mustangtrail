@@ -20,38 +20,48 @@ import (
 	"strconv"
 )
 
-// Date specifies a Gregorian calendar day as the numeric value of
-// the 8 decimal ISO 8601 basic format.
-type Date uint32
+// Date specifies a Gregorian calendar day (with 23 bits).
+type Date uint
 
 // Split returns the corresponding year, month and day of the month.
 // Months count from 1 [January] to 12 [December] conform time.Month.
 func (d Date) Split() (year, month, day int) {
-	i := int(d)
-	return i / 10000, (i / 100) % 100, i % 100
+	return int(d >> 9), int(d >> 5 & 15), int(d & 31)
 }
 
 // String returns the ISO 8601 extended format.
 func (d Date) String() string {
-	return fmt.Sprintf("%04d-%02d-%02d", d/10000, (d/100)%100, d%100)
+	year, month, day := d.Split()
+	return fmt.Sprintf("%04d-%02d-%02d", year, month, day)
 }
 
 // ParseDate parses an ISO calendar date.
 // The return is zero for malformed input.
 func ParseDate(s string) Date {
+	var yyyy, mm, dd string
 	switch len(s) {
 	case 8: // basic format YYYYMMDD
-		i, _ := strconv.ParseInt(s, 10, 32)
-		return Date(i)
-
+		yyyy, mm, dd = s[:4], s[4:6], s[6:]
 	case 10: // extended format YYYY-MM-DD
 		if s[4] != '-' || s[7] != '-' {
 			return 0
 		}
-		i, _ := strconv.ParseInt(s[:4]+s[5:7]+s[8:], 10, 32)
-		return Date(i)
-
+		yyyy, mm, dd = s[:4], s[5:7], s[8:]
 	default:
 		return 0
 	}
+
+	year, err := strconv.ParseUint(yyyy, 10, 14)
+	if err != nil {
+		return 0
+	}
+	month, err := strconv.ParseUint(mm, 10, 4)
+	if err != nil {
+		return 0
+	}
+	day, err := strconv.ParseUint(dd, 10, 5)
+	if err != nil {
+		return 0
+	}
+	return Date(year<<9 | month<<5 | day)
 }

@@ -18,28 +18,30 @@ import "testing"
 
 var goldenDates = []*struct {
 	Date Date
-	// parts
-	Year, Month, Day int
 	// formats
 	Extended, Basic string
+	// parts
+	Year, Month, Day int
 }{
-	{20180605, 2018, 6, 5, "2018-06-05", "20180605"},
+	{0x0fc4c5, "2018-06-05", "20180605", 2018, 6, 5},
+	{0x00019f, "0000-12-31", "00001231", 0, 12, 31},
+	{0x4e1e21, "9999-01-01", "99990101", 9999, 1, 1},
 }
 
 func TestGoldenDates(t *testing.T) {
 	for _, gold := range goldenDates {
+		if y, m, d := gold.Date.Split(); y != gold.Year || m != gold.Month || d != gold.Day {
+			t.Errorf("split %s got (%d, %d, %d), want (%d, %d, %d)",
+				gold.Extended, y, m, d, gold.Year, gold.Month, gold.Day)
+		}
 		if got := gold.Date.String(); got != gold.Extended {
-			t.Errorf("%d: got string %q, want %q", gold.Date, got, gold.Extended)
+			t.Errorf("got string %q, want %q", got, gold.Extended)
 		}
 		if got := ParseDate(gold.Extended); got != gold.Date {
-			t.Errorf("%d: got %d for %q", gold.Date, got, gold.Extended)
+			t.Errorf("parse %q got 0b%b, want 0b%b", gold.Extended, got, gold.Date)
 		}
 		if got := ParseDate(gold.Basic); got != gold.Date {
-			t.Errorf("%d: got %d for %q", gold.Date, got, gold.Basic)
-		}
-		if y, m, d := gold.Date.Split(); y != gold.Year || m != gold.Month || d != gold.Day {
-			t.Errorf("%d: got (%d, %d, %d), want (%d, %d, %d)",
-				gold.Date, y, m, d, gold.Year, gold.Month, gold.Day)
+			t.Errorf("parse %q got 0b%b, want 0b%b", gold.Basic, got, gold.Date)
 		}
 	}
 }
